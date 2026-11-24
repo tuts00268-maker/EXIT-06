@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>心事悄悄話｜學習情緒分析儀表板</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Noto Sans TC"', '"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            peach: {
+              50: '#fff7ed',
+              100: '#ffedd5',
+              200: '#fed7aa',
+              300: '#fdba74',
+              400: '#fb923c',
+              500: '#f97316',
+              600: '#ea580c',
+              700: '#c2410c',
+              800: '#9a3412',
+              900: '#7c2d12',
+            },
+            coral: {
+              50: '#fff1f2',
+              100: '#ffe4e6',
+              200: '#fecdd3',
+              300: '#fda4af',
+              400: '#fb7185',
+              500: '#f43f5e',
+              600: '#e11d48',
+              700: '#be123c',
+            },
+            apricot: {
+              100: '#ffedd5',
+              200: '#fed7aa',
+              300: '#fbb97c',
+              400: '#f89344',
+              500: '#f16b1e'
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      font-size: 18px; /* 寬大舒適的預設字體 */
+    }
+    
+    .glass-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 10px 30px -5px rgba(249, 115, 22, 0.12), 0 4px 12px -2px rgba(244, 63, 94, 0.08);
+    }
+    
+    .pulse-glow {
+      animation: pulse-ring 2s infinite;
+    }
+    
+    @keyframes pulse-ring {
+      0% { transform: scale(0.98); box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.6); }
+      70% { transform: scale(1.02); box-shadow: 0 0 0 14px rgba(249, 115, 22, 0); }
+      100% { transform: scale(0.98); box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
+    }
+
+    .peach-bg {
+      background: radial-gradient(circle at 10% 15%, rgba(254, 205, 211, 0.8) 0%, transparent 45%),
+                  radial-gradient(circle at 90% 85%, rgba(254, 215, 170, 0.8) 0%, transparent 45%),
+                  radial-gradient(circle at 50% 50%, rgba(255, 237, 213, 0.5) 0%, transparent 60%),
+                  linear-gradient(135deg, #fff7ed 0%, #fff1f2 40%, #ffedd5 100%);
+    }
+
+    /* 自訂滾動條 */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #ffedd5;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #fb923c;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="peach-bg text-stone-800 min-h-screen pb-16 antialiased selection:bg-coral-500 selection:text-white">
+
+  <!-- 頂部導航列 -->
+  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-orange-200/80 shadow-sm py-4 px-4 sm:px-8">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-peach-500 via-coral-500 to-amber-400 flex items-center justify-center text-white shadow-lg shadow-orange-300">
+          <i class="fa-solid fa-graduation-cap text-2xl"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-extrabold text-stone-900 tracking-tight flex items-center gap-2">
+            心事悄悄話 <span class="text-coral-500">✨</span> 學習心情分析儀表板
+          </h1>
+          <p class="text-base text-peach-700 font-semibold">國小學童上課專注度、測驗情緒與作業負擔洞察</p>
+        </div>
+      </div>
+      
+      <!-- 語音控制與動作按鈕群 -->
+      <div class="flex items-center gap-3">
+        <button id="voiceBtn" onclick="toggleSpeech()" class="pulse-glow flex items-center gap-2.5 bg-gradient-to-r from-coral-500 via-peach-500 to-amber-500 hover:from-coral-600 hover:to-orange-600 text-white font-bold px-6 py-3 rounded-2xl shadow-lg shadow-orange-200 transition-all text-lg active:scale-95">
+          <i id="voiceIcon" class="fa-solid fa-volume-high text-xl"></i>
+          <span id="voiceLabel">播放 AI 評語語音</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主內容區 -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-8 mt-8 space-y-8">
+
+    <!-- 評語引言與語音發聲重點框 -->
+    <section class="glass-card rounded-3xl p-6 sm:p-8 border border-orange-200/80 relative overflow-hidden">
+      <div class="absolute -right-8 -bottom-8 opacity-10 text-peach-600 pointer-events-none">
+        <i class="fa-solid fa-comments text-9xl"></i>
+      </div>
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4 pb-3 border-b border-orange-100">
+        <div class="flex items-center gap-3">
+          <span class="px-3.5 py-1.5 rounded-full bg-peach-100 text-peach-800 text-base font-bold flex items-center gap-2 border border-peach-200">
+            <i class="fa-solid fa-robot text-coral-500"></i> AI 專家綜合評語總結
+          </span>
+          <span class="text-sm font-semibold text-stone-500">調查樣本：51 位國小高年級學童</span>
+        </div>
+        <div id="speechStatus" class="text-sm font-bold text-coral-600 hidden items-center gap-2">
+          <span class="inline-block w-2.5 h-2.5 bg-coral-500 rounded-full animate-ping"></span> 語音朗讀進行中...
+        </div>
+      </div>
+      
+      <p id="speechScript" class="text-xl sm:text-2xl leading-relaxed text-stone-800 font-semibold tracking-wide">
+        「各位老師與家長好！這次問卷展現了孩子們真實的心聲：有超過五成的孩子非常期待在聯絡簿或考卷上看到老師溫暖的鼓勵評語！但在隨堂測驗和作業卡關時，也有超過四成的孩子容易陷入緊張、或者遇到難題無人可問。建議課堂上建立同儕互助與清晰訂正指引，多用正向回饋給予安全感，陪伴孩子快樂學習！」
+      </p>
+      
+      <div class="mt-4 flex flex-wrap gap-2 pt-2">
+        <span class="bg-coral-50 text-coral-700 border border-coral-200 px-3 py-1 rounded-xl text-sm font-medium">#大於55%期待肯定鼓勵</span>
+        <span class="bg-peach-50 text-peach-700 border border-peach-200 px-3 py-1 rounded-xl text-sm font-medium">#41%測驗緊張焦慮</span>
+        <span class="bg-amber-50 text-amber-700 border border-amber-200 px-3 py-1 rounded-xl text-sm font-medium">#題目卡關無人可問最困擾</span>
+      </div>
+    </section>
+
+    <!-- 4 個重點 KPI 指標卡片 -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      
+      <!-- 卡片 1 -->
+      <div class="glass-card rounded-3xl p-6 border-l-8 border-coral-500 hover:translate-y-[-4px] transition-transform">
+        <div class="flex items-center justify-between text-stone-500 mb-2">
+          <span class="text-base font-bold">最渴望的反饋</span>
+          <div class="w-10 h-10 rounded-xl bg-coral-100 flex items-center justify-center text-coral-600">
+            <i class="fa-solid fa-heart text-lg"></i>
+          </div>
+        </div>
+        <div class="text-4xl font-extrabold text-coral-600">54.9%</div>
+        <p class="text-base font-medium text-stone-600 mt-1">期待看到老師鼓勵的評語</p>
+        <div class="mt-3 text-xs font-semibold text-coral-700 bg-coral-50 px-2.5 py-1 rounded-lg inline-block border border-coral-100">
+          共 28 位學童強烈渴望
+        </div>
+      </div>
+
+      <!-- 卡片 2 -->
+      <div class="glass-card rounded-3xl p-6 border-l-8 border-peach-500 hover:translate-y-[-4px] transition-transform">
+        <div class="flex items-center justify-between text-stone-500 mb-2">
+          <span class="text-base font-bold">測驗焦慮比例</span>
+          <div class="w-10 h-10 rounded-xl bg-peach-100 flex items-center justify-center text-peach-600">
+            <i class="fa-solid fa-gauge-high text-lg"></i>
+          </div>
+        </div>
+        <div class="text-4xl font-extrabold text-peach-600">41.2%</div>
+        <p class="text-base font-medium text-stone-600 mt-1">怕考不好 / 心跳加速</p>
+        <div class="mt-3 text-xs font-semibold text-peach-800 bg-peach-50 px-2.5 py-1 rounded-lg inline-block border border-peach-100">
+          隨堂測驗帶來壓力刺激
+        </div>
+      </div>
+
+      <!-- 卡片 3 -->
+      <div class="glass-card rounded-3xl p-6 border-l-8 border-amber-500 hover:translate-y-[-4px] transition-transform">
+        <div class="flex items-center justify-between text-stone-500 mb-2">
+          <span class="text-base font-bold">上課高投入度</span>
+          <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600">
+            <i class="fa-solid fa-clock text-lg"></i>
+          </div>
+        </div>
+        <div class="text-4xl font-extrabold text-amber-600">43.1%</div>
+        <p class="text-base font-medium text-stone-600 mt-1">聽得懂且有趣時間過很快</p>
+        <div class="mt-3 text-xs font-semibold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg inline-block border border-amber-100">
+          正面投入課堂比例高
+        </div>
+      </div>
+
+      <!-- 卡片 4 -->
+      <div class="glass-card rounded-3xl p-6 border-l-8 border-rose-400 hover:translate-y-[-4px] transition-transform">
+        <div class="flex items-center justify-between text-stone-500 mb-2">
+          <span class="text-base font-bold">首要學習瓶頸</span>
+          <div class="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600">
+            <i class="fa-solid fa-circle-question text-lg"></i>
+          </div>
+        </div>
+        <div class="text-4xl font-extrabold text-rose-600">35.3%</div>
+        <p class="text-base font-medium text-stone-600 mt-1">題目不會且無人可問</p>
+        <div class="mt-3 text-xs font-semibold text-rose-800 bg-rose-50 px-2.5 py-1 rounded-lg inline-block border border-rose-100">
+          最常出現的卡關情境
+        </div>
+      </div>
+
+    </section>
+
+    <!-- 圖表展示區：雙欄大卡片版面 -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+      <!-- 圖表 1：隨堂測驗情緒 -->
+      <div class="glass-card rounded-3xl p-6 sm:p-7 border border-orange-200 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-xl sm:text-2xl font-bold text-stone-900 flex items-center gap-2">
+              <span class="text-coral-500"><i class="fa-solid fa-feather-pointed"></i></span>
+              老師突發隨堂測驗時的感受
+            </h3>
+            <span class="text-xs bg-peach-100 text-peach-800 font-bold px-2.5 py-1 rounded-full border border-peach-200">單選</span>
+          </div>
+          <p class="text-stone-600 text-sm mb-4">分析學童面對突擊測驗的心態反應與抗壓能力</p>
+        </div>
+        <div class="relative h-72 sm:h-80 w-full flex items-center justify-center">
+          <canvas id="quizChart"></canvas>
+        </div>
+        <div class="mt-4 pt-3 border-t border-orange-100 text-sm text-stone-600 flex justify-between items-center">
+          <span>💡 <strong>結論：</strong> 多數孩子能平常心應對，但有 41% 感到高度壓力。</span>
+        </div>
+      </div>
+
+      <!-- 圖表 2：課堂聽課感受 -->
+      <div class="glass-card rounded-3xl p-6 sm:p-7 border border-orange-200 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-xl sm:text-2xl font-bold text-stone-900 flex items-center gap-2">
+              <span class="text-peach-500"><i class="fa-solid fa-chalkboard-user"></i></span>
+              坐在位子聽老師上課時的狀態
+            </h3>
+            <span class="text-xs bg-orange-100 text-orange-800 font-bold px-2.5 py-1 rounded-full border border-orange-200">單選</span>
+          </div>
+          <p class="text-stone-600 text-sm mb-4">呈現學生在日常課堂上的理解度與注意力維持情形</p>
+        </div>
+        <div class="relative h-72 sm:h-80 w-full flex items-center justify-center">
+          <canvas id="listenChart"></canvas>
+        </div>
+        <div class="mt-4 pt-3 border-t border-orange-100 text-sm text-stone-600 flex justify-between items-center">
+          <span>💡 <strong>結論：</strong> 聽懂但偶爾恍神者佔近半數(45.1%)，需適度穿插互動。</span>
+        </div>
+      </div>
+
+      <!-- 圖表 3：寫作業心情 -->
+      <div class="glass-card rounded-3xl p-6 sm:p-7 border border-orange-200 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-xl sm:text-2xl font-bold text-stone-900 flex items-center gap-2">
+              <span class="text-coral-500"><i class="fa-solid fa-book-open"></i></span>
+              每天回家寫作業或評量的心情
+            </h3>
+            <span class="text-xs bg-rose-100 text-rose-800 font-bold px-2.5 py-1 rounded-full border border-rose-200">單選</span>
+          </div>
+          <p class="text-stone-600 text-sm mb-4">掌握孩子在放學課後負擔的心理適應程度</p>
+        </div>
+        <div class="relative h-72 sm:h-80 w-full flex items-center justify-center">
+          <canvas id="hwChart"></canvas>
+        </div>
+        <div class="mt-4 pt-3 border-t border-orange-100 text-sm text-stone-600 flex justify-between items-center">
+          <span>💡 <strong>結論：</strong> 86% 學童能順利寫完或欣然接受，14% 產生排斥想逃跑。</span>
+        </div>
+      </div>
+
+      <!-- 圖表 4：常遇小困擾排行 (複選分析) -->
+      <div class="glass-card rounded-3xl p-6 sm:p-7 border border-orange-200 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-xl sm:text-2xl font-bold text-stone-900 flex items-center gap-2">
+              <span class="text-amber-500"><i class="fa-solid fa-triangle-exclamation"></i></span>
+              學校上課或寫作業的困擾排行
+            </h3>
+            <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2.5 py-1 rounded-full border border-amber-200">複選</span>
+          </div>
+          <p class="text-stone-600 text-sm mb-4">深入定位學童在課內與課外卡關的核心痛點</p>
+        </div>
+        <div class="relative h-72 sm:h-80 w-full flex items-center justify-center">
+          <canvas id="issueChart"></canvas>
+        </div>
+        <div class="mt-4 pt-3 border-t border-orange-100 text-sm text-stone-600 flex justify-between items-center">
+          <span>💡 <strong>結論：</strong> 「孤立無援」與「時間被剝奪感」是最主要的課後壓力源。</span>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- 學生心聲與繪畫作品專區 -->
+    <section class="glass-card rounded-3xl p-6 sm:p-8 border border-orange-200">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 class="text-2xl sm:text-3xl font-bold text-stone-900 flex items-center gap-3">
+            <i class="fa-solid fa-palette text-coral-500"></i>
+            【用畫畫說心事】學生作品精選與心情共鳴
+          </h2>
+          <p class="text-stone-600 text-base mt-1">問卷中有 11 位學童透過繪畫直接表達了對課堂壓力、厚重作業或訂正難題的深刻感受。</p>
+        </div>
+        <span class="bg-peach-100 text-peach-800 text-sm font-bold px-4 py-2 rounded-2xl flex items-center gap-2 border border-peach-200">
+          <i class="fa-solid fa-images text-coral-500"></i> 11 筆繪圖心事回傳
+        </span>
+      </div>
+
+      <!-- 繪畫卡片展示清單 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        <!-- 作品卡 1 -->
+        <div class="bg-gradient-to-b from-orange-50/60 to-white rounded-2xl p-5 border border-orange-200 flex flex-col justify-between hover:shadow-md transition-shadow">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="px-3 py-1 rounded-full bg-rose-100 text-rose-700 font-bold text-xs border border-rose-200">六年級・作業焦慮</span>
+              <span class="text-xs text-stone-400">10/19 14:16</span>
+            </div>
+            <p class="text-stone-700 font-semibold mb-3">「寫到一半常常卡住想發脾氣，寫很久都沒時間好好玩耍...」</p>
+            <div class="text-xs text-stone-500 bg-orange-50/70 p-2.5 rounded-xl border border-orange-200/60 mb-4">
+              困擾勾選：老師上課講太快、看了訂正也不知道怎麼改、怕被發現考不好。
+            </div>
+          </div>
+          <a href="https://drive.google.com/open?id=1ZeqR3KV9MQm3frhd222HZAvCpG3VWdK5" target="_blank" rel="noopener noreferrer" class="text-center font-bold text-peach-700 bg-white border border-peach-300 hover:bg-peach-50 px-4 py-2 rounded-xl text-sm transition-colors flex items-center justify-center gap-2">
+            <i class="fa-brands fa-google-drive text-peach-500"></i> 查看學生畫作檔案
+          </a>
+        </div>
+
+        <!-- 作品卡 2 -->
+        <div class="bg-gradient-to-b from-orange-50/60 to-white rounded-2xl p-5 border border-orange-200 flex flex-col justify-between hover:shadow-md transition-shadow">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="px-3 py-1 rounded-full bg-coral-100 text-coral-700 font-bold text-xs border border-coral-200">六年級・考試空白</span>
+              <span class="text-xs text-stone-400">10/19 14:18</span>
+            </div>
+            <p class="text-stone-700 font-semibold mb-3">「有點緊張怕考不好，考試緊張到腦袋一片空白，來不及聽懂。」</p>
+            <div class="text-xs text-stone-500 bg-orange-50/70 p-2.5 rounded-xl border border-orange-200/60 mb-4">
+              困擾勾選：老師上課講太快、期待能收到老師的鼓勵評語。
+            </div>
+          </div>
+          <a href="https://drive.google.com/open?id=1GquPfhQe9cUMotI_Lkt0V6iDsVB2azp3" target="_blank" rel="noopener noreferrer" class="text-center font-bold text-peach-700 bg-white border border-peach-300 hover:bg-peach-50 px-4 py-2 rounded-xl text-sm transition-colors flex items-center justify-center gap-2">
+            <i class="fa-brands fa-google-drive text-peach-500"></i> 查看學生畫作檔案
+          </a>
+        </div>
+
+        <!-- 作品卡 3 -->
+        <div class="bg-gradient-to-b from-orange-50/60 to-white rounded-2xl p-5 border border-orange-200 flex flex-col justify-between hover:shadow-md transition-shadow">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="px-3 py-1 rounded-full bg-amber-100 text-amber-800 font-bold text-xs border border-amber-200">四年級・卡關求助</span>
+              <span class="text-xs text-stone-400">10/19 19:28</span>
+            </div>
+            <p class="text-stone-700 font-semibold mb-3">「遇到不會寫的題目，旁邊剛好沒有人可以問，訂正也不會改。」</p>
+            <div class="text-xs text-stone-500 bg-orange-50/70 p-2.5 rounded-xl border border-orange-200/60 mb-4">
+              雖然課堂覺得有趣，但課後自學遇到瓶頸時容易失去方向。
+            </div>
+          </div>
+          <a href="https://drive.google.com/open?id=1BMezIpbRoByTtUzZpl8cqvIuXmoB_LON" target="_blank" rel="noopener noreferrer" class="text-center font-bold text-peach-700 bg-white border border-peach-300 hover:bg-peach-50 px-4 py-2 rounded-xl text-sm transition-colors flex items-center justify-center gap-2">
+            <i class="fa-brands fa-google-drive text-peach-500"></i> 查看學生畫作檔案
+          </a>
+        </div>
+
+      </div>
+
+      <!-- 更多檔案展開導引 -->
+      <div class="mt-6 p-4 bg-orange-50/80 border border-orange-200/80 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-stone-600">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-circle-info text-peach-500 text-base"></i>
+          <span>包含六年級共 11 位同學上傳的心情塗鴉（涵蓋想睡覺、被紅筆叉叉嚇到、作業頭痛等生動描繪）。</span>
+        </div>
+        <a href="https://docs.google.com/spreadsheets/d/1-PSRguoplOeplkh767CZHnzkvtmn8SHQG5lpygoD-DU/edit?usp=sharing" target="_blank" class="text-coral-600 font-bold hover:underline flex items-center gap-1">
+          前往 Google 表單試算表檢視全部原始回覆 <i class="fa-solid fa-arrow-up-right-from-square"></i>
+        </a>
+      </div>
+    </section>
+
+    <!-- 教學實踐具體改善建議 (Actionable Insights) -->
+    <section class="glass-card rounded-3xl p-6 sm:p-8 border border-orange-200">
+      <h2 class="text-2xl sm:text-3xl font-bold text-stone-900 mb-6 flex items-center gap-3">
+        <i class="fa-solid fa-lightbulb text-amber-500"></i>
+        教育行動方針：三項為孩子減壓、提振信心的具體建議
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <div class="bg-white rounded-2xl p-6 border border-orange-100 shadow-sm">
+          <div class="w-12 h-12 rounded-xl bg-orange-100 text-peach-600 flex items-center justify-center text-xl mb-4">
+            <i class="fa-solid fa-hands-holding-child"></i>
+          </div>
+          <h4 class="text-xl font-bold text-stone-900 mb-2">1. 實施「課後互助問答桌」</h4>
+          <p class="text-base text-stone-600 leading-relaxed">
+            針對 35% 學生遇到不會寫卻無人可問的窘境，可以在班級設立放學前的「10分鐘互助討論時間」或互助學習小天使，避免孩子將困惑帶回家轉化為作業挫折。
+          </p>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 border border-orange-100 shadow-sm">
+          <div class="w-12 h-12 rounded-xl bg-coral-100 text-coral-600 flex items-center justify-center text-xl mb-4">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+          </div>
+          <h4 class="text-xl font-bold text-stone-900 mb-2">2. 測驗遊戲化，減少突襲緊張</h4>
+          <p class="text-base text-stone-600 leading-relaxed">
+            有 41% 學生因突襲測驗感到緊張心跳快。建議將隨堂測驗包裝為趣味搶答或闖關挑戰，強調「發現問題」而非「考核分數」，有效舒緩考試壓力。
+          </p>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 border border-orange-100 shadow-sm">
+          <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-xl mb-4">
+            <i class="fa-solid fa-comment-dots"></i>
+          </div>
+          <h4 class="text-xl font-bold text-stone-900 mb-2">3. 溫暖鼓勵評語取代單純紅字</h4>
+          <p class="text-base text-stone-600 leading-relaxed">
+            超過 54% 學生高度在乎老師的溫暖字句。即使只是一句「這次計算步驟很有條理，加油！」，都能大幅驅散學生對叉叉紅字的恐懼感。
+          </p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 頁尾宣告 -->
+    <footer class="text-center text-stone-500 text-base pt-6 pb-4">
+      心事悄悄話問卷分析儀表板 ｜ 資料來源：Google 試算表統計回覆 (N=51) ｜ 採用 Web Speech 語音合成引擎
+    </footer>
+
+  </main>
+
+  <script>
+    /* ========================================================
+       1. 資料統計數據集（基於試算表 51 筆完整記錄統計）
+       ======================================================== */
+    const SURVEY_DATA = {
+      total: 51,
+      // 隨堂測驗情緒
+      quizFeelings: {
+        labels: ['還好，就跟平常一樣寫', '有點緊張，怕自己考不好', '超開心，覺得很好玩又刺激', '心跳好快，希望不要考', '未填答'],
+        counts: [20, 16, 8, 5, 2]
+      },
+      // 聽課狀態
+      listenFeelings: {
+        labels: ['大部分聽得懂，偶爾恍神', '聽得懂又有趣，過很快', '有點難，眼皮重想睡覺', '聽不太懂，覺得無聊', '未填答'],
+        counts: [23, 22, 4, 1, 1]
+      },
+      // 寫作業心情
+      homeworkFeelings: {
+        labels: ['花點時間寫完，可接受', '輕鬆寫完，有成就感', '頭好痛，好想趕快逃跑', '卡住想發脾氣', '未填答'],
+        counts: [27, 17, 5, 1, 1]
+      },
+      // 常見小困擾 TOP 5 (複選分析)
+      issues: {
+        labels: ['遇到不會寫題目無人可問', '寫作業太久沒時間玩耍', '不知道哪裡錯/不會訂正', '考試緊張腦袋一片空白', '老師上課講太快聽不懂'],
+        counts: [18, 11, 10, 8, 7]
+      }
+    };
+
+    /* ========================================================
+       2. Web Speech 語音評語朗讀引擎
+       ======================================================== */
+    let synth = window.speechSynthesis;
+    let speechUtterance = null;
+    let isSpeaking = false;
+
+    function initSpeech() {
+      if (!('speechSynthesis' in window)) {
+        const btn = document.getElementById('voiceBtn');
+        btn.classList.add('opacity-50', 'cursor-not-allowed');
+        btn.onclick = null;
+        document.getElementById('voiceLabel').textContent = '瀏覽器不支援語音';
+        return;
+      }
+    }
+
+    function toggleSpeech() {
+      if (!('speechSynthesis' in window)) return;
+
+      if (isSpeaking) {
+        synth.cancel();
+        isSpeaking = false;
+        updateVoiceUI(false);
+      } else {
+        const text = document.getElementById('speechScript').innerText;
+        speechUtterance = new SpeechSynthesisUtterance(text);
+        speechUtterance.lang = 'zh-TW';
+        speechUtterance.rate = 1.0;  // 穩定舒適的語速
+        speechUtterance.pitch = 1.08; // 輕快親切的女聲/青少聲音調
+
+        // 嘗試挑選優質繁體中文或 Google 中文語音
+        const voices = synth.getVoices();
+        const preferredVoice = voices.find(v => (v.lang === 'zh-TW' || v.lang === 'cmn-Hant-TW' || v.name.includes('Taiwan') || v.name.includes('Yating')));
+        if (preferredVoice) {
+          speechUtterance.voice = preferredVoice;
+        }
+
+        speechUtterance.onstart = function() {
+          isSpeaking = true;
+          updateVoiceUI(true);
+        };
+
+        speechUtterance.onend = function() {
+          isSpeaking = false;
+          updateVoiceUI(false);
+        };
+
+        speechUtterance.onerror = function() {
+          isSpeaking = false;
+          updateVoiceUI(false);
+        };
+
+        synth.speak(speechUtterance);
+      }
+    }
+
+    function updateVoiceUI(speaking) {
+      const label = document.getElementById('voiceLabel');
+      const icon = document.getElementById('voiceIcon');
+      const statusIndicator = document.getElementById('speechStatus');
+      const voiceBtn = document.getElementById('voiceBtn');
+
+      if (speaking) {
+        label.textContent = '暫停語音朗讀';
+        icon.className = 'fa-solid fa-circle-pause text-xl text-yellow-200';
+        voiceBtn.classList.remove('pulse-glow');
+        voiceBtn.classList.add('from-rose-600', 'to-orange-700');
+        statusIndicator.classList.remove('hidden');
+        statusIndicator.classList.add('flex');
+      } else {
+        label.textContent = '播放 AI 評語語音';
+        icon.className = 'fa-solid fa-volume-high text-xl';
+        voiceBtn.classList.add('pulse-glow');
+        voiceBtn.classList.remove('from-rose-600', 'to-orange-700');
+        statusIndicator.classList.add('hidden');
+        statusIndicator.classList.remove('flex');
+      }
+    }
+
+    // 確保語音列表正確加載
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = function() {
+        window.speechSynthesis.getVoices();
+      };
+    }
+
+    /* ========================================================
+       3. Chart.js 圖表配置與粉橘活力色系樣式
+       ======================================================== */
+    window.onload = function() {
+      initSpeech();
+
+      // 全域圖表字體設定 (大號字體、清晰度高)
+      Chart.defaults.font.family = '"Noto Sans TC", sans-serif';
+      Chart.defaults.font.size = 15;
+      Chart.defaults.color = '#44403c';
+      Chart.defaults.plugins.tooltip.padding = 12;
+      Chart.defaults.plugins.tooltip.cornerRadius = 10;
+      Chart.defaults.plugins.tooltip.titleFont = { size: 15, weight: 'bold' };
+      Chart.defaults.plugins.tooltip.bodyFont = { size: 14 };
+
+      // 1. 隨堂測驗圓環圖 (粉橘色階調)
+      new Chart(document.getElementById('quizChart'), {
+        type: 'doughnut',
+        data: {
+          labels: SURVEY_DATA.quizFeelings.labels,
+          datasets: [{
+            data: SURVEY_DATA.quizFeelings.counts,
+            backgroundColor: [
+              '#fb923c', // 活潑暖橘
+              '#f43f5e', // 珊瑚粉紅 (緊張)
+              '#facc15', // 明亮黃 (開心刺激)
+              '#e11d48', // 深玫瑰粉 (心跳快)
+              '#cbd5e1'  // 溫和灰
+            ],
+            borderColor: '#ffffff',
+            borderWidth: 3,
+            hoverOffset: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                boxWidth: 14,
+                padding: 14,
+                font: { size: 14, weight: '600' }
+              }
+            }
+          },
+          cutout: '62%'
+        }
+      });
+
+      // 2. 課堂聽課感受長條圖
+      new Chart(document.getElementById('listenChart'), {
+        type: 'bar',
+        data: {
+          labels: ['大部分聽懂/偶恍神', '有趣/時間飛逝', '眼皮重想睡', '聽不懂無聊', '未填答'],
+          datasets: [{
+            label: '學生人數',
+            data: SURVEY_DATA.listenFeelings.counts,
+            backgroundColor: [
+              'rgba(249, 115, 22, 0.85)', // 活力橘
+              'rgba(251, 113, 133, 0.85)', // 甜美珊瑚粉
+              'rgba(245, 158, 11, 0.85)',  // 溫暖琥珀
+              'rgba(239, 68, 68, 0.85)',   // 醒目紅
+              'rgba(148, 163, 184, 0.85)'  // 淺灰
+            ],
+            borderColor: ['#ea580c', '#f43f5e', '#d97706', '#dc2626', '#94a3b8'],
+            borderWidth: 1.5,
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { stepSize: 5, font: { size: 14 } },
+              grid: { color: 'rgba(254, 215, 170, 0.4)' }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 13, weight: '600' } }
+            }
+          }
+        }
+      });
+
+      // 3. 寫作業心情餅圖
+      new Chart(document.getElementById('hwChart'), {
+        type: 'pie',
+        data: {
+          labels: SURVEY_DATA.homeworkFeelings.labels,
+          datasets: [{
+            data: SURVEY_DATA.homeworkFeelings.counts,
+            backgroundColor: [
+              '#f97316', // 活力橘 (還可以接受)
+              '#34d399', // 翡翠青綠 (成就感)
+              '#fb7185', // 溫柔粉 (頭好痛想逃)
+              '#f43f5e', // 鮮桃粉 (想發脾氣)
+              '#cbd5e1'  // 灰色未填
+            ],
+            borderColor: '#ffffff',
+            borderWidth: 3,
+            hoverOffset: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                boxWidth: 14,
+                padding: 14,
+                font: { size: 14, weight: '600' }
+              }
+            }
+          }
+        }
+      });
+
+      // 4. 常見小困擾 (水平長條圖)
+      new Chart(document.getElementById('issueChart'), {
+        type: 'bar',
+        data: {
+          labels: SURVEY_DATA.issues.labels,
+          datasets: [{
+            label: '勾選人次',
+            data: SURVEY_DATA.issues.counts,
+            backgroundColor: 'rgba(251, 146, 60, 0.85)',
+            borderColor: '#ea580c',
+            borderWidth: 1.5,
+            borderRadius: 8
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            x: {
+              beginAtZero: true,
+              ticks: { stepSize: 4, font: { size: 14 } },
+              grid: { color: 'rgba(254, 215, 170, 0.4)' }
+            },
+            y: {
+              grid: { display: false },
+              ticks: { font: { size: 13, weight: '600' } }
+            }
+          }
+        }
+      });
+    };
+  </script>
+</body>
+</html>
