@@ -6,9 +6,9 @@
 
 | 項目 | 內容 |
 |---|---|
-| 課程名稱 | （請填寫課程名稱） |
+| 課程名稱 | 多模態生成式 AI 課程 |
 | 組別 | 第 ＿ 組 |
-| 小組成員 | ○○○（學號）、○○○（學號）、○○○（學號）、○○○（學號） |
+| 小組成員 | T11455102吳欣凝 / T11455106洪翊瑄 / T11455107謝侑恩 / T11455110楊采霖 / T11455111楊琇淳 / T11455112鄭琇文 |
 | Repo 網址 | https://github.com/tuts00268-maker/EXIT-06 |
 | 線上展示 | （部署後填寫，例如 GitHub Pages 網址） |
 
@@ -65,13 +65,9 @@ flowchart LR
 - 定位為「情緒覺察與調節」的學習工具，**不做任何心理診斷**
 - 若孩子連續多天回報負面情緒，系統會提醒老師主動關心，並轉介輔導室
 
-## 🖼️ 畫面截圖
+## 📊 前期調查成果
 
-| 首頁／心情打卡 | 呼吸泡泡 | 老師端心情溫度計 |
-|:---:|:---:|:---:|
-| ![心情打卡](docs/screenshots/checkin.png) | ![呼吸泡泡](docs/screenshots/breathing.png) | ![老師端](docs/screenshots/teacher.png) |
-
-> 前期調查成果：[第一次作業「心事悄悄話」儀表板](docs/survey-dashboard.html)
+第一次作業「心事悄悄話」儀表板：[docs/survey-dashboard.html](docs/survey-dashboard.html)
 
 ## 🚀 如何執行
 
